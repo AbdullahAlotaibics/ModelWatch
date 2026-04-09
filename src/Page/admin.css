@@ -1,0 +1,192 @@
+.admin-page {
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #eff4ff;
+  min-height: 100vh;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 40px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #102a48;
+}
+
+.logo-icon {
+  font-size: 1.2rem;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.nav-links span {
+  font-size: 0.95rem;
+  color: #52637a;
+  cursor: pointer;
+}
+
+.nav-links .active {
+  color: #102a48;
+  font-weight: 700;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-info {
+  text-align: right;
+  display: grid;
+  gap: 2px;
+}
+
+.user-name {
+  font-weight: 700;
+  color: #102a48;
+}
+
+.user-role {
+  font-size: 0.85rem;
+  color: #66758d;
+}
+
+.logout-btn {
+  border: none;
+  background: transparent;
+  color: #1d4fcc;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.content {
+  padding: 36px 40px 40px;
+}
+
+.dashboard-header h1 {
+  font-size: 2.2rem;
+  color: #102a48;
+  margin-bottom: 10px;
+}
+
+.dashboard-header p {
+  color: #52637a;
+  line-height: 1.7;
+}
+
+.table-card {
+  margin-top: 28px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 26px;
+  box-shadow: 0 14px 44px rgba(15, 23, 42, 0.08);
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.toolbar input {
+  flex: 1;
+  min-width: 240px;
+  max-width: 540px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid #d7dee9;
+  color: #102a48;
+  background: #f8fbff;
+}
+
+.toolbar input::placeholder {
+  color: #8c98ab;
+}
+
+.add-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 14px 22px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 680px;
+}
+
+.user-table th,
+.user-table td {
+  padding: 18px 16px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+}
+
+.user-table th {
+  color: #6b7a92;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.user-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.admin {
+  background: #ede9ff;
+  color: #5f3c91;
+}
+
+.owner {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.analyst {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.table-footer {
+  margin-top: 20px;
+  color: #8893a5;
+  font-size: 0.95rem;
+}
