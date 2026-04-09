@@ -1,21 +1,32 @@
-<<<<<<< HEAD
-# React + Vite
+﻿# ModelWatch
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ModelWatch is a platform designed to help teams and students manage, compare, and track machine learning models in one place.
 
-Currently, two official plugins are available:
+## What it does
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Stores model details, notes, and updates in a structured format
+- Helps teams compare model performance and metadata
+- Reduces scattered project documentation across files and documents
+- Provides a React + Vite frontend for fast development and easy updates
 
-## React Compiler
+## Getting started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+3. Open the app in your browser at the URL shown in the terminal.
 
-## Expanding the ESLint configuration
+## Project structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-=======
-# ModelWatch
-ModelWatch is a platform designed to help teams and students manage and track machine learning models in a structured way. In many academic and project environments, model details, notes, and updates are scattered across multiple files and documents, making it difficult to compare models, track changes, and maintain consistent documentation
->>>>>>> 845b5b0c7a9d557523f39129b370a5a16c9a6961
+- `src/` - React application source code
+- `public/` - static assets and `index.html`
+- `README.md` - project overview and setup instructions
+
+## Notes
+
+This repository is built with React and Vite for a fast development experience.
