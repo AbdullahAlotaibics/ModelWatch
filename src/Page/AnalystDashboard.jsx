@@ -1,86 +1,89 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getStoredAccount } from "../session";
-import { ownerModels } from "./ownerModels";
+import { ownerCategories, ownerModels } from "./ownerModels";
 import {
   CompareIcon,
   EyeIcon,
   FilterIcon,
   LockIcon,
-  PlusIcon,
   SearchIcon,
+  TrendingUpIcon,
   UsersIcon,
 } from "./OwnerIcons";
 
 function getVisibilityIcon(visibility) {
-  if (visibility === "private") {
-    return <LockIcon className="owner-inline-icon" />;
-  }
-
   if (visibility === "shared") {
     return <UsersIcon className="owner-inline-icon" />;
+  }
+
+  if (visibility === "private") {
+    return <LockIcon className="owner-inline-icon" />;
   }
 
   return <EyeIcon className="owner-inline-icon" />;
 }
 
 function getVisibilityClass(visibility) {
-  if (visibility === "private") {
-    return "visibility-badge private";
-  }
-
   if (visibility === "shared") {
     return "visibility-badge shared";
+  }
+
+  if (visibility === "private") {
+    return "visibility-badge private";
   }
 
   return "visibility-badge public";
 }
 
-function OwnerDashboard() {
+function AnalystDashboard() {
   const navigate = useNavigate();
-  const currentUser = getStoredAccount();
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
   const [filterVisibility, setFilterVisibility] = useState("all");
 
-  const myModels = useMemo(
-    () => ownerModels.filter((model) => model.ownerEmail === currentUser?.email),
-    [currentUser]
+  const accessibleModels = useMemo(
+    () =>
+      ownerModels.filter(
+        (model) => model.visibility === "public" || model.visibility === "shared"
+      ),
+    []
   );
 
   const filteredModels = useMemo(
     () =>
-      myModels.filter((model) => {
+      accessibleModels.filter((model) => {
         const normalizedSearch = searchTerm.trim().toLowerCase();
         const matchesSearch =
           !normalizedSearch ||
           model.name.toLowerCase().includes(normalizedSearch) ||
           model.description.toLowerCase().includes(normalizedSearch);
+        const matchesCategory =
+          filterCategory === "all" || model.category === filterCategory;
         const matchesVisibility =
           filterVisibility === "all" || model.visibility === filterVisibility;
 
-        return matchesSearch && matchesVisibility;
+        return matchesSearch && matchesCategory && matchesVisibility;
       }),
-    [filterVisibility, myModels, searchTerm]
+    [accessibleModels, filterCategory, filterVisibility, searchTerm]
   );
 
-  const totalUpdates = myModels.reduce((count, model) => count + model.updates.length, 0);
-
+  const analyzedCount = accessibleModels.filter((model) => model.notes.length > 0).length;
   const handlePendingRoute = () => {};
 
   return (
     <div className="page-shell">
       <section className="page-title-section">
         <div>
-          <h1>My Models</h1>
-          <p>Manage and track your model portfolio.</p>
+          <h1>Model Browser</h1>
+          <p>Explore and analyze models across the platform.</p>
         </div>
       </section>
 
       <section className="metrics-row">
         <div className="metric-card owner-stat-card">
           <div>
-            <p>Total Models</p>
-            <h2>{myModels.length}</h2>
+            <p>Accessible Models</p>
+            <h2>{accessibleModels.length}</h2>
           </div>
           <div className="owner-stat-icon filter">
             <FilterIcon className="owner-panel-icon" />
@@ -89,37 +92,49 @@ function OwnerDashboard() {
 
         <div className="metric-card owner-stat-card">
           <div>
-            <p>Public Models</p>
-            <h2>{myModels.filter((model) => model.visibility === "public").length}</h2>
+            <p>Categories</p>
+            <h2>{ownerCategories.length}</h2>
           </div>
-          <div className="owner-stat-icon public">
-            <EyeIcon className="owner-panel-icon" />
+          <div className="owner-stat-icon trend">
+            <TrendingUpIcon className="owner-panel-icon" />
           </div>
         </div>
 
         <div className="metric-card owner-stat-card">
           <div>
-            <p>Recent Updates</p>
-            <h2>{totalUpdates}</h2>
+            <p>Analyzed</p>
+            <h2>{analyzedCount}</h2>
           </div>
-          <div className="owner-stat-icon updates">
-            <PlusIcon className="owner-panel-icon" />
+          <div className="owner-stat-icon public">
+            <EyeIcon className="owner-panel-icon" />
           </div>
         </div>
       </section>
 
       <section className="overview-card owner-models-panel">
-        <div className="owner-toolbar">
+        <div className="owner-toolbar owner-analyst-toolbar">
+          <label className="owner-search-field owner-search-wide">
+            <SearchIcon className="owner-inline-icon owner-search-icon" />
+            <input
+              type="text"
+              placeholder="Search models by name or description..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+          </label>
+
           <div className="owner-toolbar-filters">
-            <label className="owner-search-field">
-              <SearchIcon className="owner-inline-icon owner-search-icon" />
-              <input
-                type="text"
-                placeholder="Search models..."
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </label>
+            <select
+              value={filterCategory}
+              onChange={(event) => setFilterCategory(event.target.value)}
+            >
+              <option value="all">All Categories</option>
+              {ownerCategories.map((category) => (
+                <option key={category.id} value={category.name}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
 
             <select
               value={filterVisibility}
@@ -127,16 +142,8 @@ function OwnerDashboard() {
             >
               <option value="all">All Visibility</option>
               <option value="public">Public</option>
-              <option value="private">Private</option>
               <option value="shared">Shared</option>
             </select>
-          </div>
-
-          <div className="owner-toolbar-actions">
-            <button type="button" className="primary-button" onClick={handlePendingRoute}>
-              <PlusIcon className="owner-inline-icon" />
-              <span>Create Model</span>
-            </button>
 
             <button
               type="button"
@@ -144,7 +151,7 @@ function OwnerDashboard() {
               onClick={() => navigate("/owner/compare")}
             >
               <CompareIcon className="owner-inline-icon" />
-              <span>Compare</span>
+              <span>Compare Models</span>
             </button>
           </div>
         </div>
@@ -166,21 +173,22 @@ function OwnerDashboard() {
             >
               <div className="owner-model-header">
                 <div className="owner-model-copy">
-                  <h3>{model.name}</h3>
+                  <div className="owner-model-title-row">
+                    <h3>{model.name}</h3>
+                    <span className={getVisibilityClass(model.visibility)}>
+                      {getVisibilityIcon(model.visibility)}
+                      <span>{model.visibility}</span>
+                    </span>
+                  </div>
                   <p>{model.description}</p>
                 </div>
-
-                <span className={getVisibilityClass(model.visibility)}>
-                  {getVisibilityIcon(model.visibility)}
-                  <span>{model.visibility}</span>
-                </span>
               </div>
 
               <div className="owner-model-footer">
                 <div className="owner-model-meta">
                   <span className="tag-pill">{model.category}</span>
-                  <span>{model.attributes.length} attributes</span>
-                  <span>{model.updates.length} updates</span>
+                  <span>Owner: {model.ownerName}</span>
+                  <span>{model.notes.length} analytical notes</span>
                 </div>
 
                 <span className="model-date">
@@ -192,7 +200,7 @@ function OwnerDashboard() {
 
           {filteredModels.length === 0 ? (
             <div className="owner-empty-state">
-              <p>No models found. Create your first model to get started.</p>
+              <p>No models found matching your criteria.</p>
             </div>
           ) : null}
         </div>
@@ -201,4 +209,4 @@ function OwnerDashboard() {
   );
 }
 
-export default OwnerDashboard;
+export default AnalystDashboard;

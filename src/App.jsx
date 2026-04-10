@@ -1,25 +1,46 @@
-import React, { useState } from "react";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
-import Admin from "./page/Admin";
+import React, { useEffect, useState } from "react";
+import {
+  BrowserRouter,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import AdminCategoriesPage from "./Page/AdminCategoriesPage";
+import AdminDashboardPage from "./Page/AdminDashboardPage";
+import AdminIssuesPage from "./Page/AdminIssuesPage";
+import AdminLayout from "./Page/AdminLayout";
+import AdminUsersPage from "./Page/AdminUsersPage";
+import OwnerHome from "./Page/OwnerHome";
 import OwnerLayout from "./Page/OwnerLayout";
-import OwnerDashboard from "./Page/OwnerDashboard";
 import OwnerBrowse from "./Page/OwnerBrowse";
 import OwnerCompare from "./Page/OwnerCompare";
+import {
+  clearStoredAccount,
+  demoAccounts,
+  getStoredAccount,
+  storeAccount,
+} from "./session";
 import "./index.css";
-
-const demoAccounts = [
-  { label: "Admin", role: "admin", email: "admin@modelwatch.com", password: "admin123" },
-  { label: "John Owner", role: "owner", email: "owner@modelwatch.com", password: "owner123" },
-  { label: "Sarah Analyst", role: "analyst", email: "analyst@modelwatch.com", password: "analyst123" },
-];
 
 function LoginPage() {
   const navigate = useNavigate();
+  const storedAccount = getStoredAccount();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (!storedAccount) {
+      return;
+    }
+
+    navigate(storedAccount.role === "admin" ? "/dashboard" : "/owner", { replace: true });
+  }, [navigate, storedAccount]);
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
 
     const matchedAccount = demoAccounts.find(
       (account) =>
@@ -27,12 +48,13 @@ function LoginPage() {
         account.password === password.trim()
     );
 
-    if (matchedAccount) {
-      const route = matchedAccount.role === "admin" ? "/admin" : "/owner";
-      navigate(route, { state: matchedAccount });
-    } else {
+    if (!matchedAccount) {
       alert("Invalid login");
+      return;
     }
+
+    storeAccount(matchedAccount);
+    navigate(matchedAccount.role === "admin" ? "/dashboard" : "/owner", { replace: true });
   };
 
   return (
@@ -54,7 +76,7 @@ function LoginPage() {
               type="email"
               placeholder="user@modelwatch.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(event) => setEmail(event.target.value)}
             />
           </div>
 
@@ -68,7 +90,7 @@ function LoginPage() {
               type="password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(event) => setPassword(event.target.value)}
             />
           </div>
 
@@ -93,17 +115,43 @@ function LoginPage() {
   );
 }
 
+function ProtectedRoute({ allowedRoles }) {
+  const location = useLocation();
+  const account = getStoredAccount();
+
+  if (!account || !allowedRoles.includes(account.role)) {
+    clearStoredAccount();
+    return <Navigate to="/" replace state={{ from: location }} />;
+  }
+
+  return <Outlet />;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LoginPage />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/owner" element={<OwnerLayout />}>
-          <Route index element={<OwnerDashboard />} />
-          <Route path="browse" element={<OwnerBrowse />} />
-          <Route path="compare" element={<OwnerCompare />} />
+
+        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/dashboard" element={<AdminDashboardPage />} />
+            <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+            <Route path="/admin/users" element={<AdminUsersPage />} />
+            <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+            <Route path="/admin/issues" element={<AdminIssuesPage />} />
+          </Route>
         </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={["owner", "analyst"]} />}>
+          <Route path="/owner" element={<OwnerLayout />}>
+            <Route index element={<OwnerHome />} />
+            <Route path="browse" element={<OwnerBrowse />} />
+            <Route path="compare" element={<OwnerCompare />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
