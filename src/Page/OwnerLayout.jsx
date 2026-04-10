@@ -1,13 +1,18 @@
 import React from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { clearStoredAccount, getStoredAccount } from "../session";
 import "./owner.css";
 
 function OwnerLayout() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const account = location.state || {};
+  const account = getStoredAccount() || {};
   const userName = account.label || "Model Owner";
   const userRole = account.role === "owner" ? "Model Owner" : account.role || "Owner";
+
+  const handleLogout = () => {
+    clearStoredAccount();
+    navigate("/", { replace: true });
+  };
 
   return (
     <div className="owner-page">
@@ -34,7 +39,7 @@ function OwnerLayout() {
             <strong>{userName}</strong>
             <span>{userRole}</span>
           </div>
-          <button className="logout-button" onClick={() => navigate("/")}>
+          <button className="logout-button" onClick={handleLogout}>
             Logout
           </button>
         </div>
