@@ -179,10 +179,10 @@ public/          Static assets
 
 ## Team
 
-- Team Member 1: ABDULLAH ALOTAIBI - [Backend development, database design & integration]
-- Team Member 2: MOHAMMED ALFARAJ - [Frontend development, database design & integration]
-- Team Member 3: MOHAMMED ALNASR - [Frontend development, Testing & documentation]
-- Team Member 4: SAAD WAQAS - [Backend development, Testing and documentation]
+- Team Member 1: ABDULLAH ALOTAIBI - [Frontend development]
+- Team Member 2: MOHAMMED ALFARAJ - [Frontend development]
+- Team Member 3: MOHAMMED ALNASR - [Frontend development]
+- Team Member 4: SAAD WAQAS - [Frontend development]
 
 ## Front-End Configuration
 
