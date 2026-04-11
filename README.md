@@ -7,8 +7,14 @@ Model Watch is a front-end prototype for a model management platform used to org
 - Admin workspace for user, category, and issue management
 - Owner dashboard for managing owned models and reviewing portfolio activity
 - Analyst dashboard for browsing accessible models and filtering by category or visibility
+- Analyst actions inside model view:
+   - Add analyical notes
+   - Flag models
+   - export model summary
+- Flagged models are submitted to the admin Issue Management sections
 - Shared comparison workflow for reviewing multiple models side by side
 - Demo login flow for switching between supported roles during development
+- Role based navigation and protected routes
 
 ## Tech Stack
 
@@ -119,6 +125,7 @@ When signed in as an admin:
    - Remove a category after confirmation
 4. Open the Issues page to:
    - Review reported issues
+   - Review issues submitted from flagged models
    - Change issue status
    - Add a resolution note and mark an issue as resolved
 5. Use the Logout button in the top-right corner to return to the login screen.
@@ -137,7 +144,11 @@ When signed in as a model owner:
    - Dashboard
    - Browse Models
    - Compare
-4. The Create Model button and model-card click targets are present in the interface, but their destination pages are intentionally left for future implementation.
+4. Open a model to view:
+   - Overview
+   - History
+   - Analytical Notes
+5. Owners can create and edit their models from the detail view or edit form.
 
 ### Analyst usage
 
@@ -155,16 +166,22 @@ When signed in as an analyst:
    - Select up to four accessible models
    - Choose which attributes to compare
    - Review shared model properties side by side
+5. Flagged models are sent to the admin Issues page for follow-up.
 
 ### Example test flow
 
-1. Sign in as `admin@modelwatch.com`.
-2. Add a user in the Users page, then move to Categories and create a new category.
-3. Open Issues and resolve one of the listed reports.
-4. Log out and sign in as `owner@modelwatch.com`.
-5. Search for a model, filter by visibility, and open the Compare page.
-6. Log out and sign in as `analyst@modelwatch.com`.
-7. Filter the model browser by category and then compare two accessible models.
+1. sign in as `owner@modelwatch.com`.
+2. Create a new model, then open and edit it.
+3. Use Compare to compare multiple owned models.
+4. Log out and Sign in as `analyst@modelwatch.com`.
+5. Open a model from the browse page.
+6. Add an analytical note to a model in the Analytical Notes tab.
+7. Flag the model using the Flag button.
+8. Export the model summary.
+9. Log out and sign in as `admin@modelwatch.com`.
+10. Open Issues and confirm the flagged model appeared in the issue list.
+11. Update the issue status or resolve it.
+
 
 ## Project Structure
 
