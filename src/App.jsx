@@ -106,8 +106,8 @@ function LoginPage() {
           <div className="demo-list">
             {demoAccounts.map((account) => (
               <div key={account.email} className="demo-item">
-                <strong>{account.label}:</strong>
-                <span>
+                <strong className="demo-label">{account.label}:</strong>
+                <span className="demo-value">
                   {account.email} / {account.password}
                 </span>
               </div>

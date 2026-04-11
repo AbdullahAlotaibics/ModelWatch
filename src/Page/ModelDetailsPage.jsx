@@ -88,6 +88,9 @@ function ModelDetailsPage() {
   const [flagComment, setFlagComment] = useState("");
   const [flagError, setFlagError] = useState("");
   const [flagSuccess, setFlagSuccess] = useState("");
+  const [noteText, setNoteText] = useState("");
+  const [noteError, setNoteError] = useState("");
+  const [noteSuccess, setNoteSuccess] = useState("");
 
   const model = useMemo(() => getModelById(modelId), [modelId]);
   useEffect (() => {
@@ -130,6 +133,28 @@ function ModelDetailsPage() {
     : (extra?.history || []),
     };
   }, [currentModel]);
+
+  const handleAddNote = (event) => {
+  event.preventDefault();
+
+  if (!noteText.trim()) {
+    setNoteError("Note cannot be empty.");
+    return;
+  }
+
+  const updatedModel = {
+    ...currentModel,
+    notes: [...(currentModel.notes || []), noteText.trim()],
+    updatedAt: new Date().toISOString().slice(0, 10),
+    updates: [...(currentModel.updates || []), "Analytical note added"],
+  };
+
+  updateModel(updatedModel);
+  setCurrentModel(updatedModel);
+  setNoteText("");
+  setNoteError("");
+  setNoteSuccess("Analytical note added successfully.");
+};
 
   const openFlagModal = () => {
   setIsFlagModalOpen(true);
@@ -385,27 +410,48 @@ const handleFlagSubmit = (event) => {
       ) : null}
 
       {activeTab === "Analytical Notes" ? (
-        <section className="details-updates-card">
-          <h2 className="details-card-title">
-            <NoteIcon className="owner-inline-icon" />
-            <span>Analytical Notes</span>
-          </h2>
+    <section className="details-updates-card">
+      <h2 className="details-card-title">
+        <NoteIcon className="owner-inline-icon" />
+        <span>Analytical Notes</span>
+      </h2>
 
-          {pageData.notes.length > 0 ? (
-            <div className="timeline-list">
-              {pageData.notes.map((note, index) => (
-                <article key={`${note}-${index}`} className="timeline-card updated-style">
-                  <p>{note}</p>
-                </article>
-              ))}
-            </div>
+      <form onSubmit={handleAddNote} className="model-note-form">
+        <textarea
+          className="modal-textarea"
+          rows="4"
+          placeholder="Add an analytical note..."
+          value={noteText}
+          onChange={(event) => {
+            setNoteText(event.target.value);
+            if (noteError) setNoteError("");
+            if (noteSuccess) setNoteSuccess("");
+          }}
+        />
+
+        {noteError ? <div className="inline-error">{noteError}</div> : null}
+        {noteSuccess ? <div className="success-message">{noteSuccess}</div> : null}
+
+        <div className="modal-actions">
+          <button type="submit" className="primary-btn">Add Note</button>
+        </div>
+      </form>
+
+      {pageData.notes.length > 0 ? (
+        <div className="timeline-list">
+          {pageData.notes.map((note, index) => (
+            <article key={`${note}-${index}`} className="timeline-card updated-style">
+              <p>{note}</p>
+            </article>
+          ))}
+          </div>
           ) : (
-            <p className="empty-copy">No analytical notes available.</p>
-          )}
-        </section>
-      ) : null}
+          <p className="empty-copy">No analytical notes available.</p>
+        )}
+      </section>
+    ) : null}
 
-        {isFlagModalOpen ? (
+    {isFlagModalOpen ? (
     <div className="modal-backdrop" onClick={closeFlagModal}>
       <div className="modal-card" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
