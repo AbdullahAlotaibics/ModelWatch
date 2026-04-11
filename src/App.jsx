@@ -154,6 +154,7 @@ function App() {
             <Route path="compare" element={<OwnerCompare />} />
             <Route path="models/new" element={<ModelFormPage />} />
             <Route path="models/:modelId" element={<ModelDetailsPage />} />
+            <Route path="models/:modelId/edit" element={<ModelFormPage />} />
           </Route>
         </Route>
 

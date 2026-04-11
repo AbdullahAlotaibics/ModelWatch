@@ -171,7 +171,7 @@ function ModelDetailsPage() {
               <button
                 type="button"
                 className="primary-button details-main-action"
-                onClick={() => alert("Edit Model action")}
+                onClick={() => navigate(`/owner/models/${modelId}/edit`)}
               >
                 <EditIcon className="owner-inline-icon" />
                 <span>Edit Model</span>
@@ -270,9 +270,10 @@ function ModelDetailsPage() {
                 <button
                   type="button"
                   className="text-action-button"
-                  onClick={() => alert("Add Update action")}
+                  onClick={() => navigate(`/owner/models/${modelId}/edit`)}
                 >
-                  + Add Update
+                  <EditIcon className="owner-inline-icon" />
+                  <span>Edit Model</span>
                 </button>
               ) : null}
             </div>

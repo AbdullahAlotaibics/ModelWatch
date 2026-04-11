@@ -32,3 +32,14 @@ export function createModel(model) {
 export function getModelById(id) {
   return getModels().find((model) => model.id === id);
 }
+
+export function updateModel(updatedModel) {
+  const currentModels = getModels();
+
+  const nextModels = currentModels.map((model) => 
+  model.id === updatedModel.id ? updatedModel : model
+  );
+
+  saveModels(nextModels);
+  return updatedModel;
+}

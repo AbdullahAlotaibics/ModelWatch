@@ -176,10 +176,25 @@
 .detail-pill,
 .tag-pill {
   border-radius: 999px;
-  padding: 8px 14px;
+  padding: 10px 16px;
   background: #eff4ff;
   color: #1d4fcc;
   font-weight: 700;
+  display: inline-flex;
+  max-width: 100%;
+  min-width: 92px;
+  line-height: 1.2;
+  text-align: center;
+  word-break: keep-all;
+  white-space: normal;
+  justify-content: center;
+  align-items: center;
+  overflow-wrap: break-word;
+}
+
+.owner-compare-table td:not(:first-child),
+.owner-compare-table th:not(:first-child) {
+  min-width: 180px;
 }
 
 .search-card {
