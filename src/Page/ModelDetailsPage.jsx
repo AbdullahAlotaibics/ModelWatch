@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getStoredAccount } from "../session";
-import { getModelById } from "./modelStore";
+import { createIssue } from "./issueStore";
+import { getModelById, updateModel } from "./modelStore";
 import {
   ArrowLeftIcon,
   EyeIcon,
@@ -80,42 +81,109 @@ function ModelDetailsPage() {
   const { modelId } = useParams();
   const currentUser = getStoredAccount();
   const [activeTab, setActiveTab] = useState("Overview");
+  const [currentModel, setCurrentModel] = useState(null);
+  const [isFlagModalOpen, setIsFlagModalOpen] = useState(false);
+  const [flagReason, setFlagReason] = useState("");
+  const [flagSeverity, setFlagSeverity] = useState("medium");
+  const [flagComment, setFlagComment] = useState("");
+  const [flagError, setFlagError] = useState("");
+  const [flagSuccess, setFlagSuccess] = useState("");
 
   const model = useMemo(() => getModelById(modelId), [modelId]);
+  useEffect (() => {
+    setCurrentModel(model || null)
+  }, [model]);
 
   const pageData = useMemo(() => {
-    if (!model) {
+    if (!currentModel) {
       return null;
     }
 
-    const extra = modelExtraDetails[model.id];
+    const extra = modelExtraDetails[currentModel.id];
 
     return {
-      title: extra?.title || model.name,
-      visibility: extra?.visibility || model.visibility,
-      category: extra?.category || model.category,
-      description: extra?.description || model.description,
-      ownerName: model.ownerName,
-      createdDisplay: extra?.createdDisplay || formatFallbackDate(model.createdAt),
-      updatedDisplay: extra?.updatedDisplay || formatFallbackDate(model.updatedAt),
+      title: extra?.title || currentModel.name,
+      visibility: extra?.visibility || currentModel.visibility,
+      category: extra?.category || currentModel.category,
+      description: extra?.description || currentModel.description,
+      ownerName: currentModel.ownerName,
+      createdDisplay: extra?.createdDisplay || formatFallbackDate(currentModel.createdAt),
+      updatedDisplay: extra?.updatedDisplay || formatFallbackDate(currentModel.updatedAt),
       overviewItems:
         extra?.overviewItems ||
-        model.attributes?.map((attribute) => ({
+        currentModel.attributes?.map((attribute) => ({
           label: attribute.name,
           value: attribute.value,
         })) ||
         [],
       files: extra?.files || [],
-      notes: extra?.notes || model.notes || [],
+      notes: (currentModel.notes && currentModel.notes.length > 0)
+      ? currentModel.notes
+      : (extra?.notes || []),
       history:
-        extra?.history ||
-        (model.updates || []).map((update) => ({
-          text: update,
-          author: model.ownerName,
-          time: formatFallbackDate(model.updatedAt),
-        })),
+        currentModel.updates && currentModel.updates.length > 0
+    ? currentModel.updates.map((update) => ({
+        text: update,
+        author: currentModel.ownerName,
+        time: formatFallbackDate(currentModel.updatedAt),
+      }))
+    : (extra?.history || []),
     };
-  }, [model]);
+  }, [currentModel]);
+
+  const openFlagModal = () => {
+  setIsFlagModalOpen(true);
+  setFlagError("");
+  setFlagSuccess("");
+};
+
+const closeFlagModal = () => {
+  setIsFlagModalOpen(false);
+  setFlagReason("");
+  setFlagSeverity("medium");
+  setFlagComment("");
+  setFlagError("");
+};
+
+const handleFlagSubmit = (event) => {
+  event.preventDefault();
+
+  if (!flagReason.trim()) {
+    setFlagError("Reason is required.");
+    return;
+  }
+
+    const newFlag = {
+      id: `flag-${Date.now()}`,
+      reason: flagReason.trim(),
+      severity: flagSeverity,
+      comment: flagComment.trim(),
+      createdAt: new Date().toISOString().slice(0, 10),
+      createdBy: currentUser?.label || currentUser?.email || "User",
+      status: "open",
+    };
+
+    const newIssue = {
+      title: `Flagged model: ${currentModel.name}`,
+      description: flagComment.trim() || flagReason.trim(),
+      reportedBy: currentUser?.label || currentUser?.email || "User",
+      modelName: currentModel.name,
+      reason: flagReason.trim(),
+    };
+
+    const updatedModel = {
+      ...currentModel,
+      flags: [...(currentModel.flags || []), newFlag],
+      updatedAt: new Date().toISOString().slice(0, 10),
+      updates: [...(currentModel.updates || []), `Model flagged: ${flagReason.trim()}`],
+    };
+
+    createIssue(newIssue);
+    updateModel(updatedModel);
+    setFlagSuccess("Model flagged successfully.");
+    setCurrentModel(updatedModel);
+    closeFlagModal();
+  };
 
   if (!pageData) {
     return (
@@ -144,6 +212,8 @@ function ModelDetailsPage() {
         <ArrowLeftIcon className="owner-inline-icon" />
         <span>Back</span>
       </button>
+
+      {flagSuccess ? <div className="success-message">{flagSuccess}</div> : null}
 
       <section className="model-hero-card">
         <div className="model-hero-top">
@@ -192,7 +262,7 @@ function ModelDetailsPage() {
                 <button
                   type="button"
                   className="secondary-button details-main-action"
-                  onClick={() => alert("Flag action")}
+                  onClick={openFlagModal}
                 >
                   <FlagIcon className="owner-inline-icon" />
                   <span>Flag</span>
@@ -218,7 +288,7 @@ function ModelDetailsPage() {
           </button>
         ))}
       </section>
-
+      
       {activeTab === "Overview" ? (
         <>
           <section className="model-overview-grid">
@@ -334,6 +404,69 @@ function ModelDetailsPage() {
           )}
         </section>
       ) : null}
+
+        {isFlagModalOpen ? (
+    <div className="modal-backdrop" onClick={closeFlagModal}>
+      <div className="modal-card" onClick={(event) => event.stopPropagation()}>
+        <div className="modal-header">
+          <div>
+            <h2>Flag Model</h2>
+            <p>Report an issue or concern for this model.</p>
+          </div>
+
+          <button type="button" className="modal-close-btn" onClick={closeFlagModal}>
+            ×
+          </button>
+        </div>
+
+        <form onSubmit={handleFlagSubmit} className="modal-form">
+          <label className="modal-field">
+            <span>Reason</span>
+            <input
+              type="text"
+              value={flagReason}
+              onChange={(event) => setFlagReason(event.target.value)}
+              placeholder="e.g. Data drift detected"
+            />
+          </label>
+
+          <label className="modal-field">
+            <span>Severity</span>
+            <select
+              value={flagSeverity}
+              onChange={(event) => setFlagSeverity(event.target.value)}
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+
+          <label className="modal-field">
+            <span>Comment</span>
+            <textarea
+              className="modal-textarea"
+              value={flagComment}
+              onChange={(event) => setFlagComment(event.target.value)}
+              placeholder="Add details"
+              rows="4"
+            />
+          </label>
+
+          {flagError ? <div className="inline-error">{flagError}</div> : null}
+
+          <div className="modal-actions">
+            <button type="button" className="secondary-btn" onClick={closeFlagModal}>
+              Cancel
+            </button>
+            <button type="submit" className="primary-btn">
+              Submit Flag
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  ) : null}
     </div>
   );
 }

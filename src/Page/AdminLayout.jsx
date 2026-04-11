@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { getAllIssues, updateIssue as updateStoredIssue} from "./issueStore";
 import { clearStoredAccount, getStoredAccount } from "../session";
 import {
   AlertCircleIcon,
@@ -67,42 +68,6 @@ const initialCategories = [
   },
 ];
 
-const initialIssues = [
-  {
-    id: "1",
-    title: "Bias detected in credit risk model",
-    description: "A reviewer flagged uneven approval rates across protected groups in the latest evaluation run.",
-    reportedBy: "Sarah Analyst",
-    createdAt: "2026-04-02",
-    status: "open",
-    modelName: "Credit Risk Classifier",
-    reason: "Fairness concern",
-    resolutionNote: "",
-  },
-  {
-    id: "2",
-    title: "Missing model card details",
-    description: "The deployment record was published without the required documentation for intended use and limitations.",
-    reportedBy: "John Owner",
-    createdAt: "2026-04-05",
-    status: "in-review",
-    modelName: "Sentiment Analysis BERT",
-    reason: "Documentation gap",
-    resolutionNote: "",
-  },
-  {
-    id: "3",
-    title: "Resolved drift alert investigation",
-    description: "A production model drift alert was reviewed and the threshold configuration was updated.",
-    reportedBy: "Admin User",
-    createdAt: "2026-04-07",
-    status: "resolved",
-    modelName: "Demand Forecasting v2",
-    reason: "Monitoring alert",
-    resolutionNote: "Adjusted the alert threshold and documented the updated monitoring baseline.",
-  },
-];
-
 function formatRoleLabel(role) {
   if (role === "owner") {
     return "Model Owner";
@@ -121,7 +86,7 @@ function AdminLayout() {
   const currentUser = getStoredAccount();
   const [users, setUsers] = useState(initialUsers);
   const [categories, setCategories] = useState(initialCategories);
-  const [issues, setIssues] = useState(initialIssues);
+  const [issues, setIssues] = useState(getAllIssues());
 
   const outletContext = useMemo(
     () => ({
@@ -170,12 +135,23 @@ function AdminLayout() {
           currentCategories.filter((category) => category.id !== categoryId)
         );
       },
+
+      createIssue(issue) {
+        setIssues((currentIssues) => [
+          {
+            ...issue,
+            id: String(Date.now()),
+            createdAt: new Date().toISOString().slice(0, 10),
+            status: "open",
+            resolutionNote: "",
+          },
+          ...currentIssues,
+        ]);
+      },
+
       updateIssue(issueId, updates) {
-        setIssues((currentIssues) =>
-          currentIssues.map((issue) =>
-            issue.id === issueId ? { ...issue, ...updates } : issue
-          )
-        );
+        const updatedIssues = updateStoredIssue(issueId, updates);
+        setIssues(updatedIssues);
       },
     }),
     [categories, currentUser, issues, users]
