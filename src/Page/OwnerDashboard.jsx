@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStoredAccount } from "../session";
-import { ownerModels } from "./ownerModels";
+import { getModels } from "./modelStore";
 import {
   CompareIcon,
   EyeIcon,
@@ -41,10 +41,11 @@ function OwnerDashboard() {
   const currentUser = getStoredAccount();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterVisibility, setFilterVisibility] = useState("all");
+  const [allModels] = useState(() => getModels());
 
   const myModels = useMemo(
-    () => ownerModels.filter((model) => model.ownerEmail === currentUser?.email),
-    [currentUser]
+    () => allModels.filter((model) => model.ownerEmail === currentUser?.email),
+    [allModels, currentUser]
   );
 
   const filteredModels = useMemo(
@@ -65,7 +66,13 @@ function OwnerDashboard() {
 
   const totalUpdates = myModels.reduce((count, model) => count + model.updates.length, 0);
 
-  const handlePendingRoute = () => {};
+  const handleCreateModel = () => {
+    navigate("/owner/models/new");
+  };
+
+  const handleViewModel = (modelId) => {
+    navigate(`/owner/models/${modelId}`);
+  };
 
   return (
     <div className="page-shell">
@@ -133,7 +140,7 @@ function OwnerDashboard() {
           </div>
 
           <div className="owner-toolbar-actions">
-            <button type="button" className="primary-button" onClick={handlePendingRoute}>
+            <button type="button" className="primary-button" onClick={handleCreateModel}>
               <PlusIcon className="owner-inline-icon" />
               <span>Create Model</span>
             </button>
@@ -154,13 +161,13 @@ function OwnerDashboard() {
             <article
               key={model.id}
               className="owner-model-card"
-              onClick={handlePendingRoute}
+              onClick={() => handleViewModel(model.id)}
               role="button"
               tabIndex={0}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  handlePendingRoute();
+                  handleViewModel(model.id);
                 }
               }}
             >

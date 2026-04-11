@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getStoredAccount } from "../session";
-import { ownerModels } from "./ownerModels";
+import { getModelById } from "./modelStore";
 import {
   ArrowLeftIcon,
   EyeIcon,
@@ -81,10 +81,7 @@ function ModelDetailsPage() {
   const currentUser = getStoredAccount();
   const [activeTab, setActiveTab] = useState("Overview");
 
-  const model = useMemo(
-    () => ownerModels.find((item) => item.id === modelId),
-    [modelId]
-  );
+  const model = useMemo(() => getModelById(modelId), [modelId]);
 
   const pageData = useMemo(() => {
     if (!model) {

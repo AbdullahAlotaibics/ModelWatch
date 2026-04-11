@@ -8,6 +8,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
+import ModelFormPage from "./Page/ModelFormPage";
 import AdminCategoriesPage from "./Page/AdminCategoriesPage";
 import AdminDashboardPage from "./Page/AdminDashboardPage";
 import AdminIssuesPage from "./Page/AdminIssuesPage";
@@ -151,6 +152,7 @@ function App() {
             <Route index element={<OwnerHome />} />
             <Route path="browse" element={<OwnerBrowse />} />
             <Route path="compare" element={<OwnerCompare />} />
+            <Route path="models/new" element={<ModelFormPage />} />
             <Route path="models/:modelId" element={<ModelDetailsPage />} />
           </Route>
         </Route>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStoredAccount } from "../session";
-import { ownerModels } from "./ownerModels";
+import { getModels } from "./modelStore";
 
 function OwnerBrowse() {
   const navigate = useNavigate();
@@ -10,15 +10,17 @@ function OwnerBrowse() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedVisibility, setSelectedVisibility] = useState("all");
 
+  const [models] = useState(() => getModels());
+
   const accessibleModels = useMemo(() => {
     if (currentUser?.role === "owner") {
-      return ownerModels.filter((model) => model.ownerEmail === currentUser.email);
+      return models.filter((model) => model.ownerEmail === currentUser.email);
     }
 
-    return ownerModels.filter(
+    return models.filter(
       (model) => model.visibility === "public" || model.visibility === "shared"
     );
-  }, [currentUser]);
+  }, [currentUser, models]);
 
   const categories = useMemo(() => {
     return [...new Set(accessibleModels.map((model) => model.category))];
