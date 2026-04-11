@@ -98,6 +98,61 @@ export function ArrowLeftIcon(props) {
   );
 }
 
+export function EditIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
+    </IconBase>
+  );
+}
+export function ClockIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </IconBase>
+  );
+}
+
+export function FileTextIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6" />
+      <path d="M9 17h6" />
+      <path d="M9 9h1" />
+    </IconBase>
+  );
+}
+export function NoteIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
+    </IconBase>
+  );
+}
+export function DownloadIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 3v12" />
+      <path d="m7 10 5 5 5-5" />
+      <path d="M5 21h14" />
+    </IconBase>
+  );
+}
+
+export function FlagIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M5 21V5" />
+      <path d="M5 5h10l-2 4 2 4H5" />
+    </IconBase>
+  );
+}
+
+
 export function TrendingUpIcon(props) {
   return (
     <IconBase {...props}>

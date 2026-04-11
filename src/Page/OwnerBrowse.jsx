@@ -1,25 +1,52 @@
-import React from "react";
-
-const models = [
-  {
-    title: "Customer Churn Predictor",
-    description: "Random Forest model for predicting customer churn with 89% accuracy",
-    label: "Machine Learning",
-    owner: "John Owner",
-    updates: "1 analytical notes",
-    updated: "2/20/2024",
-  },
-  {
-    title: "Sentiment Analysis BERT",
-    description: "Fine-tuned BERT model for customer sentiment classification",
-    label: "NLP",
-    owner: "Sarah Analyst",
-    updates: "2 analytical notes",
-    updated: "2/18/2024",
-  },
-];
+import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getStoredAccount } from "../session";
+import { ownerModels } from "./ownerModels";
 
 function OwnerBrowse() {
+  const navigate = useNavigate();
+  const currentUser = getStoredAccount();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedVisibility, setSelectedVisibility] = useState("all");
+
+  const accessibleModels = useMemo(() => {
+    if (currentUser?.role === "owner") {
+      return ownerModels.filter((model) => model.ownerEmail === currentUser.email);
+    }
+
+    return ownerModels.filter(
+      (model) => model.visibility === "public" || model.visibility === "shared"
+    );
+  }, [currentUser]);
+
+  const categories = useMemo(() => {
+    return [...new Set(accessibleModels.map((model) => model.category))];
+  }, [accessibleModels]);
+
+  const filteredModels = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return accessibleModels.filter((model) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        model.name.toLowerCase().includes(normalizedSearch) ||
+        model.description.toLowerCase().includes(normalizedSearch);
+
+      const matchesCategory =
+        selectedCategory === "all" || model.category === selectedCategory;
+
+      const matchesVisibility =
+        selectedVisibility === "all" || model.visibility === selectedVisibility;
+
+      return matchesSearch && matchesCategory && matchesVisibility;
+    });
+  }, [accessibleModels, searchTerm, selectedCategory, selectedVisibility]);
+
+  const handleViewModel = (modelId) => {
+    navigate(`/owner/models/${modelId}`);
+  };
+
   return (
     <div className="page-shell">
       <section className="page-title-section">
@@ -30,41 +57,80 @@ function OwnerBrowse() {
       </section>
 
       <section className="search-card">
-        <input type="text" placeholder="Search models by name or description..." />
+        <input
+          type="text"
+          placeholder="Search models by name or description..."
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+        />
+
         <div className="filters-row">
-          <select>
-            <option>All Categories</option>
-            <option>Machine Learning</option>
-            <option>NLP</option>
+          <select
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+          >
+            <option value="all">All Categories</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
           </select>
-          <select>
-            <option>All Visibility</option>
-            <option>Public</option>
-            <option>Private</option>
+
+          <select
+            value={selectedVisibility}
+            onChange={(event) => setSelectedVisibility(event.target.value)}
+          >
+            <option value="all">All Visibility</option>
+            <option value="public">Public</option>
+            <option value="shared">Shared</option>
+            {currentUser?.role === "owner" ? <option value="private">Private</option> : null}
           </select>
-          <button className="compare-button">Compare Models</button>
+
+          <button
+            className="compare-button"
+            type="button"
+            onClick={() => navigate("/owner/compare")}
+          >
+            Compare Models
+          </button>
         </div>
       </section>
 
       <section className="browse-list">
-        {models.map((model) => (
-          <article className="model-card" key={model.title}>
+        {filteredModels.map((model) => (
+          <article className="model-card" key={model.id}>
             <div className="model-card-top">
               <div>
-                <h2>{model.title}</h2>
+                <h2>{model.name}</h2>
                 <p>{model.description}</p>
               </div>
-              <button className="primary-button">View</button>
+
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => handleViewModel(model.id)}
+              >
+                View
+              </button>
             </div>
 
             <div className="model-card-meta">
-              <span className="tag-pill">{model.label}</span>
-              <span>Owner: {model.owner}</span>
-              <span>{model.updates}</span>
-              <span className="model-date">Updated {model.updated}</span>
+              <span className="tag-pill">{model.category}</span>
+              <span>Owner: {model.ownerName}</span>
+              <span>{model.notes?.length || 0} analytical notes</span>
+              <span className="model-date">
+                Updated {new Date(model.updatedAt).toLocaleDateString()}
+              </span>
             </div>
           </article>
         ))}
+
+        {filteredModels.length === 0 ? (
+          <article className="model-card">
+            <p>No models found.</p>
+          </article>
+        ) : null}
       </section>
     </div>
   );

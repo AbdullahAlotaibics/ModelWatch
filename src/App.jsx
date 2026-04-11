@@ -17,6 +17,7 @@ import OwnerHome from "./Page/OwnerHome";
 import OwnerLayout from "./Page/OwnerLayout";
 import OwnerBrowse from "./Page/OwnerBrowse";
 import OwnerCompare from "./Page/OwnerCompare";
+import ModelDetailsPage from "./Page/ModelDetailsPage";
 import {
   clearStoredAccount,
   demoAccounts,
@@ -105,7 +106,9 @@ function LoginPage() {
             {demoAccounts.map((account) => (
               <div key={account.email} className="demo-item">
                 <strong>{account.label}:</strong>
-                <span>{account.email} / {account.password}</span>
+                <span>
+                  {account.email} / {account.password}
+                </span>
               </div>
             ))}
           </div>
@@ -148,6 +151,7 @@ function App() {
             <Route index element={<OwnerHome />} />
             <Route path="browse" element={<OwnerBrowse />} />
             <Route path="compare" element={<OwnerCompare />} />
+            <Route path="models/:modelId" element={<ModelDetailsPage />} />
           </Route>
         </Route>
 
