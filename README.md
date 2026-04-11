@@ -91,26 +91,3 @@ Fill these in before submission:
 
 This project currently runs without required API keys or environment variables because it uses local mock data and a demo authentication flow.
 
-If an API or external service is added later:
-
-1. Store secrets in a local `.env` file.
-2. Expose only variables intended for the client with the `VITE_` prefix.
-3. Do not commit `.env` files or secret values to source control.
-
-Example:
-
-```bash
-VITE_API_BASE_URL=https://example.api
-VITE_PUBLIC_APP_NAME=Model Watch
-```
-
-Recommended next step if the project is connected to a backend:
-
-- Add a `.env.example` file with variable names only
-- Keep real values in `.env.local` or another ignored local file
-
-## Notes for Reviewers
-
-- `node_modules` and build output should not be committed
-- Environment files and secrets should remain local
-- Demo account credentials are part of the prototype and live in the client for development purposes only
