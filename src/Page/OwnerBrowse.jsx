@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../api";
 import { getStoredAccount } from "../session";
-import { getModels } from "./modelStore";
 
 function OwnerBrowse() {
   const navigate = useNavigate();
@@ -9,18 +9,42 @@ function OwnerBrowse() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedVisibility, setSelectedVisibility] = useState("all");
+  const [accessibleModels, setAccessibleModels] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const [models] = useState(() => getModels());
+  useEffect(() => {
+    let isMounted = true;
 
-  const accessibleModels = useMemo(() => {
-    if (currentUser?.role === "owner") {
-      return models.filter((model) => model.ownerEmail === currentUser.email);
+    async function loadModels() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const filters =
+          currentUser?.role === "owner" ? { ownerEmail: currentUser.email } : {};
+        const models = await api.models.list(filters);
+
+        if (isMounted) {
+          setAccessibleModels(models);
+        }
+      } catch (requestError) {
+        if (isMounted) {
+          setError(requestError.message || "Unable to load models.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
     }
 
-    return models.filter(
-      (model) => model.visibility === "public" || model.visibility === "shared"
-    );
-  }, [currentUser, models]);
+    loadModels();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.email, currentUser?.role]);
 
   const categories = useMemo(() => {
     return [...new Set(accessibleModels.map((model) => model.category))];
@@ -100,6 +124,18 @@ function OwnerBrowse() {
       </section>
 
       <section className="browse-list">
+        {isLoading ? (
+          <article className="model-card">
+            <p>Loading models...</p>
+          </article>
+        ) : null}
+
+        {error ? (
+          <article className="model-card">
+            <p>{error}</p>
+          </article>
+        ) : null}
+
         {filteredModels.map((model) => (
           <article className="model-card" key={model.id}>
             <div className="model-card-top">
@@ -128,7 +164,7 @@ function OwnerBrowse() {
           </article>
         ))}
 
-        {filteredModels.length === 0 ? (
+        {!isLoading && !error && filteredModels.length === 0 ? (
           <article className="model-card">
             <p>No models found.</p>
           </article>

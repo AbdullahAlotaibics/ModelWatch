@@ -2,7 +2,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { getStoredAccount } from "../session";
 import { api } from "../api";
-import { getModelById, updateModel } from "./modelStore";
 import {
   ArrowLeftIcon,
   EyeIcon,
@@ -13,59 +12,6 @@ import {
   DownloadIcon,
   FlagIcon,
 } from "./OwnerIcons";
-
-const modelExtraDetails = {
-  "model-1": {
-    title: "Customer Churn Predictor",
-    visibility: "public",
-    category: "Machine Learning",
-    description: "Random Forest model for predicting customer churn with 89% accuracy",
-    createdDisplay: "1/15/2024",
-    updatedDisplay: "2/20/2024",
-    overviewItems: [
-      { label: "Algorithm", value: "Random Forest" },
-      { label: "Accuracy", value: "89%" },
-      { label: "Training Data Size", value: "50,000 records" },
-      { label: "Features", value: "15" },
-    ],
-    files: ["model_config.json", "training_report.pdf"],
-    notes: ["Reviewed churn threshold sensitivity"],
-    history: [
-      {
-        text: "Improved model accuracy by 3% through feature engineering",
-        author: "John Owner",
-        time: "2/20/2024, 1:30:00 PM",
-      },
-      {
-        text: "Initial model deployment to staging environment",
-        author: "John Owner",
-        time: "1/15/2024, 5:20:00 PM",
-      },
-    ],
-  },
-  "model-3": {
-    title: "Sentiment Analysis BERT",
-    visibility: "public",
-    category: "Natural Language Processing",
-    description: "Fine-tuned BERT model for customer review sentiment analysis",
-    createdDisplay: "1/10/2024",
-    updatedDisplay: "2/18/2024",
-    overviewItems: [
-      { label: "Base Model", value: "BERT-base-uncased" },
-      { label: "F1 Score", value: "0.91" },
-      { label: "Training Examples", value: "25,000" },
-    ],
-    files: [],
-    notes: [],
-    history: [
-      {
-        text: "Fine-tuned on domain-specific data for better performance",
-        author: "John Owner",
-        time: "2/18/2024, 4:20:00 PM",
-      },
-    ],
-  },
-};
 
 const tabs = ["Overview", "History", "Analytical Notes"];
 
@@ -91,50 +37,78 @@ function ModelDetailsPage() {
   const [noteText, setNoteText] = useState("");
   const [noteError, setNoteError] = useState("");
   const [noteSuccess, setNoteSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  const model = useMemo(() => getModelById(modelId), [modelId]);
-  useEffect (() => {
-    setCurrentModel(model || null)
-  }, [model]);
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadModel() {
+      setIsLoading(true);
+      setLoadError("");
+
+      try {
+        const model = await api.models.get(modelId);
+
+        if (isMounted) {
+          setCurrentModel(model);
+        }
+      } catch (requestError) {
+        if (isMounted) {
+          setCurrentModel(null);
+          setLoadError(requestError.message || "Unable to load model.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadModel();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [modelId]);
 
   const pageData = useMemo(() => {
     if (!currentModel) {
       return null;
     }
 
-    const extra = modelExtraDetails[currentModel.id];
-
     return {
-      title: extra?.title || currentModel.name,
-      visibility: extra?.visibility || currentModel.visibility,
-      category: extra?.category || currentModel.category,
-      description: extra?.description || currentModel.description,
+      title: currentModel.name,
+      visibility: currentModel.visibility,
+      category: currentModel.category,
+      description: currentModel.description,
       ownerName: currentModel.ownerName,
-      createdDisplay: extra?.createdDisplay || formatFallbackDate(currentModel.createdAt),
-      updatedDisplay: extra?.updatedDisplay || formatFallbackDate(currentModel.updatedAt),
+      createdDisplay: formatFallbackDate(currentModel.createdAt),
+      updatedDisplay: formatFallbackDate(currentModel.updatedAt),
       overviewItems:
-        extra?.overviewItems ||
         currentModel.attributes?.map((attribute) => ({
           label: attribute.name,
           value: attribute.value,
         })) ||
         [],
-      files: extra?.files || [],
-      notes: (currentModel.notes && currentModel.notes.length > 0)
-      ? currentModel.notes
-      : (extra?.notes || []),
+      files: [],
+      notes: currentModel.notes || [],
       history:
-        currentModel.updates && currentModel.updates.length > 0
-    ? currentModel.updates.map((update) => ({
-        text: update,
-        author: currentModel.ownerName,
-        time: formatFallbackDate(currentModel.updatedAt),
-      }))
-    : (extra?.history || []),
+        currentModel.history && currentModel.history.length > 0
+          ? currentModel.history.map((entry) => ({
+              text: entry.message,
+              author: entry.actor?.name || entry.actor?.email || currentModel.ownerName,
+              time: formatFallbackDate(entry.createdAt),
+            }))
+          : (currentModel.updates || []).map((update) => ({
+              text: update,
+              author: currentModel.ownerName,
+              time: formatFallbackDate(currentModel.updatedAt),
+            })),
     };
   }, [currentModel]);
 
-  const handleAddNote = (event) => {
+  const handleAddNote = async (event) => {
   event.preventDefault();
 
   if (!noteText.trim()) {
@@ -142,18 +116,15 @@ function ModelDetailsPage() {
     return;
   }
 
-  const updatedModel = {
-    ...currentModel,
-    notes: [...(currentModel.notes || []), noteText.trim()],
-    updatedAt: new Date().toISOString().slice(0, 10),
-    updates: [...(currentModel.updates || []), "Analytical note added"],
-  };
-
-  updateModel(updatedModel);
-  setCurrentModel(updatedModel);
-  setNoteText("");
-  setNoteError("");
-  setNoteSuccess("Analytical note added successfully.");
+  try {
+    const updatedModel = await api.models.addNote(currentModel.id, noteText.trim());
+    setCurrentModel(updatedModel);
+    setNoteText("");
+    setNoteError("");
+    setNoteSuccess("Analytical note added successfully.");
+  } catch (requestError) {
+    setNoteError(requestError.message || "Unable to add note.");
+  }
 };
 
   const openFlagModal = () => {
@@ -178,29 +149,13 @@ const handleFlagSubmit = async (event) => {
     return;
   }
 
-    const newFlag = {
-      id: `flag-${Date.now()}`,
-      reason: flagReason.trim(),
-      severity: flagSeverity,
-      comment: flagComment.trim(),
-      createdAt: new Date().toISOString().slice(0, 10),
-      createdBy: currentUser?.label || currentUser?.email || "User",
-      status: "open",
-    };
-
     const newIssue = {
       title: `Flagged model: ${currentModel.name}`,
       description: flagComment.trim() || flagReason.trim(),
       reportedBy: currentUser?.label || currentUser?.email || "User",
       modelName: currentModel.name,
       reason: flagReason.trim(),
-    };
-
-    const updatedModel = {
-      ...currentModel,
-      flags: [...(currentModel.flags || []), newFlag],
-      updatedAt: new Date().toISOString().slice(0, 10),
-      updates: [...(currentModel.updates || []), `Model flagged: ${flagReason.trim()}`],
+      severity: flagSeverity,
     };
 
     try {
@@ -208,21 +163,29 @@ const handleFlagSubmit = async (event) => {
         ...newIssue,
         modelId: currentModel.id,
       });
-      updateModel(updatedModel);
       setFlagSuccess("Model flagged successfully.");
-      setCurrentModel(updatedModel);
       closeFlagModal();
     } catch (requestError) {
       setFlagError(requestError.message || "Unable to submit flag.");
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <div className="overview-card">
+          <h2>Loading model...</h2>
+        </div>
+      </div>
+    );
+  }
+
   if (!pageData) {
     return (
       <div className="page-shell">
         <div className="overview-card">
           <h2>Model not found</h2>
-          <p>The model you are trying to view does not exist.</p>
+          <p>{loadError || "The model you are trying to view does not exist."}</p>
           <button
             type="button"
             className="primary-button"

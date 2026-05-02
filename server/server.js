@@ -9,6 +9,7 @@ const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/users.routes");
 const categoryRoutes = require("./routes/categories.routes");
 const issueRoutes = require("./routes/issues.routes");
+const modelRoutes = require("./routes/models.routes");
 const authMiddleware = require("./middleware/auth.middleware");
 const User = require("./models/user.model");
 
@@ -25,6 +26,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", authMiddleware, userRoutes);
 app.use("/api/categories", authMiddleware, categoryRoutes);
 app.use("/api/issues", authMiddleware, issueRoutes);
+app.use("/api/models", authMiddleware, modelRoutes);
 
 app.get("/", (req, res) => {
   res.send("ModelWatch backend is running");

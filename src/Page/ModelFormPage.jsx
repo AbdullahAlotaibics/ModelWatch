@@ -1,8 +1,6 @@
-import React, {  useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getStoredAccount } from "../session";
-import { ownerCategories } from "./ownerModels";
-import { createModel, getModelById, updateModel } from "./modelStore";
+import { api } from "../api";
 import { ArrowLeftIcon, PlusIcon } from "./OwnerIcons";
 
 const visibilityOptions = [
@@ -13,19 +11,13 @@ const visibilityOptions = [
 
 function ModelFormPage() {
   const navigate = useNavigate();
-  const currentUser = getStoredAccount();
   const { modelId } = useParams();
   const isEditMode = Boolean(modelId);
 
-  const categoryOptions = useMemo(
-    () => ownerCategories.map((category) => category.name),
-    []
-  );
-
-  const existingModel = useMemo(
-    () => (isEditMode ? getModelById(modelId) : null),
-    [isEditMode, modelId]
-  );
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [existingModel, setExistingModel] = useState(null);
+  const [isLoading, setIsLoading] = useState(isEditMode);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -40,18 +32,58 @@ function ModelFormPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if(!isEditMode || !existingModel) {
-      return;
+    let isMounted = true;
+
+    async function loadFormData() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const [categories, model] = await Promise.all([
+          api.categories.list(),
+          isEditMode ? api.models.get(modelId) : Promise.resolve(null),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        const categoryNames = categories.map((category) => category.name);
+        setCategoryOptions(categoryNames);
+
+        if (model) {
+          setExistingModel(model);
+          setForm({
+            name: model.name || "",
+            description: model.description || "",
+            category: model.category || categoryNames[0] || "",
+            visibility: model.visibility || "private",
+          });
+          setAttributes(model.attributes || []);
+          return;
+        }
+
+        setForm((currentForm) => ({
+          ...currentForm,
+          category: currentForm.category || categoryNames[0] || "",
+        }));
+      } catch (requestError) {
+        if (isMounted) {
+          setError(requestError.message || "Unable to load model form.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
     }
-    
-    setForm({
-      name: existingModel.name || "",
-      description: existingModel.description || "",
-      category: existingModel.category || categoryOptions[0] || "",
-      visibility: existingModel.visibility || "private",
-    });
-    setAttributes(existingModel.attributes || []);
-  }, [categoryOptions, existingModel, isEditMode]);
+
+    loadFormData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isEditMode, modelId]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({
@@ -83,51 +115,56 @@ function ModelFormPage() {
     setAttributes((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!form.name.trim() || !form.description.trim()) {
+    if (!form.name.trim() || !form.description.trim() || !form.category) {
       setError("Please fill in all required fields.");
       return;
     }
 
-    const now = new Date().toISOString();
+    setIsSaving(true);
+    setError("");
 
-    if (isEditMode && existingModel){
-      const updatedModel = {
-        ...existingModel,
+    try {
+      if (isEditMode && existingModel) {
+        const updatedModel = await api.models.update(existingModel.id, {
+          name: form.name.trim(),
+          description: form.description.trim(),
+          category: form.category,
+          visibility: form.visibility,
+          attributes,
+        });
+
+        navigate(`/owner/models/${updatedModel.id}`, { replace: true });
+        return;
+      }
+
+      await api.models.create({
         name: form.name.trim(),
         description: form.description.trim(),
         category: form.category,
         visibility: form.visibility,
-        updatedAt: now,
         attributes,
-        updates: [...(existingModel.updates|| []), "Model details updated"],
-      };
+      });
 
-      updateModel(updatedModel);
-      navigate(`/owner/models/${existingModel.id}`, {replace: true});
-      return;
+      navigate("/owner", { replace: true });
+    } catch (requestError) {
+      setError(requestError.message || "Unable to save model.");
+    } finally {
+      setIsSaving(false);
     }
-
-    const newModel = {
-      id: `model-${Date.now()}`,
-      name: form.name.trim(),
-      description: form.description.trim(),
-      category: form.category,
-      visibility: form.visibility,
-      ownerName: currentUser?.label || "Model Owner",
-      ownerEmail: currentUser?.email || "",
-      createdAt: now,
-      updatedAt: now,
-      updates: ["Model created"],
-      notes: [],
-      attributes,
-    };
-
-    createModel(newModel);
-    navigate("/owner", { replace: true });
   };
+
+  if (isLoading) {
+  return (
+    <div className="page-shell">
+      <div className="overview-card">
+        <h2>Loading model...</h2>
+      </div>
+    </div>
+  );
+}
 
   if (isEditMode && !existingModel) {
   return (
@@ -285,8 +322,8 @@ function ModelFormPage() {
             >
               Cancel
             </button>
-            <button type="submit" className="primary-button">
-              {isEditMode ? "Save Changes" : "Create Model"}
+            <button type="submit" className="primary-button" disabled={isSaving}>
+              {isSaving ? "Saving..." : isEditMode ? "Save Changes" : "Create Model"}
             </button>
           </div>
         </form>

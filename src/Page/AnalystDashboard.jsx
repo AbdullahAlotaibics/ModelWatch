@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ownerCategories, ownerModels } from "./ownerModels";
+import { api } from "../api";
 import {
   CompareIcon,
   EyeIcon,
@@ -40,13 +40,44 @@ function AnalystDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterVisibility, setFilterVisibility] = useState("all");
+  const [accessibleModels, setAccessibleModels] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const accessibleModels = useMemo(
-    () =>
-      ownerModels.filter(
-        (model) => model.visibility === "public" || model.visibility === "shared"
-      ),
-    []
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadModels() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const models = await api.models.list();
+
+        if (isMounted) {
+          setAccessibleModels(models);
+        }
+      } catch (requestError) {
+        if (isMounted) {
+          setError(requestError.message || "Unable to load models.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadModels();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const categories = useMemo(
+    () => [...new Set(accessibleModels.map((model) => model.category))],
+    [accessibleModels]
   );
 
   const filteredModels = useMemo(
@@ -68,7 +99,9 @@ function AnalystDashboard() {
   );
 
   const analyzedCount = accessibleModels.filter((model) => model.notes.length > 0).length;
-  const handlePendingRoute = () => {};
+  const handleViewModel = (modelId) => {
+    navigate(`/owner/models/${modelId}`);
+  };
 
   return (
     <div className="page-shell">
@@ -93,7 +126,7 @@ function AnalystDashboard() {
         <div className="metric-card owner-stat-card">
           <div>
             <p>Categories</p>
-            <h2>{ownerCategories.length}</h2>
+            <h2>{categories.length}</h2>
           </div>
           <div className="owner-stat-icon trend">
             <TrendingUpIcon className="owner-panel-icon" />
@@ -129,9 +162,9 @@ function AnalystDashboard() {
               onChange={(event) => setFilterCategory(event.target.value)}
             >
               <option value="all">All Categories</option>
-              {ownerCategories.map((category) => (
-                <option key={category.id} value={category.name}>
-                  {category.name}
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
                 </option>
               ))}
             </select>
@@ -157,17 +190,29 @@ function AnalystDashboard() {
         </div>
 
         <div className="owner-model-list">
+          {isLoading ? (
+            <div className="owner-empty-state">
+              <p>Loading models...</p>
+            </div>
+          ) : null}
+
+          {error ? (
+            <div className="owner-empty-state">
+              <p>{error}</p>
+            </div>
+          ) : null}
+
           {filteredModels.map((model) => (
             <article
               key={model.id}
               className="owner-model-card"
-              onClick={handlePendingRoute}
+              onClick={() => handleViewModel(model.id)}
               role="button"
               tabIndex={0}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  handlePendingRoute();
+                  handleViewModel(model.id);
                 }
               }}
             >
@@ -198,7 +243,7 @@ function AnalystDashboard() {
             </article>
           ))}
 
-          {filteredModels.length === 0 ? (
+          {!isLoading && !error && filteredModels.length === 0 ? (
             <div className="owner-empty-state">
               <p>No models found matching your criteria.</p>
             </div>

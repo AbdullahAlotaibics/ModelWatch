@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../api";
 import { getStoredAccount } from "../session";
 import { ArrowLeftIcon, CompareIcon } from "./OwnerIcons";
-import { ownerModels } from "./ownerModels";
 
 function getAttributeValue(model, attributeName) {
   const attribute = model.attributes.find((item) => item.name === attributeName);
@@ -14,16 +14,42 @@ function OwnerCompare() {
   const currentUser = getStoredAccount();
   const [selectedModels, setSelectedModels] = useState([]);
   const [compareAttributes, setCompareAttributes] = useState([]);
+  const [accessibleModels, setAccessibleModels] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const accessibleModels = useMemo(() => {
-    if (currentUser?.role === "owner") {
-      return ownerModels.filter((model) => model.ownerEmail === currentUser.email);
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadModels() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const filters =
+          currentUser?.role === "owner" ? { ownerEmail: currentUser.email } : {};
+        const models = await api.models.list(filters);
+
+        if (isMounted) {
+          setAccessibleModels(models);
+        }
+      } catch (requestError) {
+        if (isMounted) {
+          setError(requestError.message || "Unable to load models.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
     }
 
-    return ownerModels.filter(
-      (model) => model.visibility === "public" || model.visibility === "shared"
-    );
-  }, [currentUser]);
+    loadModels();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.email, currentUser?.role]);
 
   const selectedModelObjects = useMemo(
     () => accessibleModels.filter((model) => selectedModels.includes(model.id)),
@@ -92,6 +118,9 @@ function OwnerCompare() {
             <h2>Select Models ({selectedModels.length}/4)</h2>
 
             <div className="owner-model-select-list">
+              {isLoading ? <p>Loading models...</p> : null}
+              {error ? <p>{error}</p> : null}
+
               {accessibleModels.map((model) => (
                 <label
                   key={model.id}

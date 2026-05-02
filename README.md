@@ -131,6 +131,15 @@ Base URL: `http://localhost:5000/api`
 - `PUT /categories/:id` — update a category (admin only)
 - `DELETE /categories/:id` — delete a category (admin only)
 
+#### Models
+- `GET /models` — list visible models; supports `search`, `category`, `visibility`, `owner`, `ownerEmail`, and `sort` query params
+- `POST /models` — create a model (admin and owner only)
+- `GET /models/:id` — get model details when visible to the current user
+- `PUT /models/:id` — update model details, attributes, or visibility (admin or model owner only)
+- `DELETE /models/:id` — delete a model (admin or model owner only)
+- `POST /models/:id/notes` — add an analytical note to a visible model
+- `GET /models/:id/history` — list model update history
+
 #### Issues
 - `GET /issues` — list all issues (admin only)
 - `POST /issues` — create a new issue (authenticated users)

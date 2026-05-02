@@ -73,6 +73,29 @@ export function normalizeIssue(issue) {
   };
 }
 
+export function normalizeModel(model) {
+  const notes = (model.notes || [])
+    .map((note) => (typeof note === "string" ? note : note.text || ""))
+    .filter(Boolean);
+
+  return {
+    id: model.id || model._id,
+    name: model.name,
+    description: model.description || "",
+    category: model.category || "",
+    visibility: model.visibility || "private",
+    ownerId: model.owner?._id || model.owner || "",
+    ownerName: model.ownerName || model.owner?.name || "",
+    ownerEmail: model.ownerEmail || model.owner?.email || "",
+    attributes: model.attributes || [],
+    notes,
+    history: model.history || [],
+    updates: (model.history || []).map((entry) => entry.message),
+    createdAt: model.createdAt ? model.createdAt.slice(0, 10) : "",
+    updatedAt: model.updatedAt ? model.updatedAt.slice(0, 10) : "",
+  };
+}
+
 export const api = {
   login(credentials) {
     return request("/auth/login", {
@@ -124,5 +147,40 @@ export const api = {
         body: JSON.stringify(issue),
       }).then((response) => normalizeIssue(response.issue)),
     remove: (id) => request(`/issues/${id}`, { method: "DELETE" }),
+  },
+
+  models: {
+    list: (filters = {}) => {
+      const params = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "" && value !== "all") {
+          params.set(key, value);
+        }
+      });
+
+      const query = params.toString();
+      return request(`/models${query ? `?${query}` : ""}`).then((models) =>
+        models.map(normalizeModel)
+      );
+    },
+    get: (id) => request(`/models/${id}`).then(normalizeModel),
+    create: (model) =>
+      request("/models", {
+        method: "POST",
+        body: JSON.stringify(model),
+      }).then(normalizeModel),
+    update: (id, model) =>
+      request(`/models/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(model),
+      }).then((response) => normalizeModel(response.model)),
+    remove: (id) => request(`/models/${id}`, { method: "DELETE" }),
+    addNote: (id, text) =>
+      request(`/models/${id}/notes`, {
+        method: "POST",
+        body: JSON.stringify({ text }),
+      }).then((response) => normalizeModel(response.model)),
+    history: (id) => request(`/models/${id}/history`),
   },
 };

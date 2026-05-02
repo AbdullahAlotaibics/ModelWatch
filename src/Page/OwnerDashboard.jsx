@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../api";
 import { getStoredAccount } from "../session";
-import { getModels } from "./modelStore";
 import {
   CompareIcon,
   EyeIcon,
@@ -41,12 +41,40 @@ function OwnerDashboard() {
   const currentUser = getStoredAccount();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterVisibility, setFilterVisibility] = useState("all");
-  const [allModels] = useState(() => getModels());
+  const [myModels, setMyModels] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const myModels = useMemo(
-    () => allModels.filter((model) => model.ownerEmail === currentUser?.email),
-    [allModels, currentUser]
-  );
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadModels() {
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const models = await api.models.list({ ownerEmail: currentUser?.email });
+
+        if (isMounted) {
+          setMyModels(models);
+        }
+      } catch (requestError) {
+        if (isMounted) {
+          setError(requestError.message || "Unable to load models.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadModels();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.email]);
 
   const filteredModels = useMemo(
     () =>
@@ -157,6 +185,18 @@ function OwnerDashboard() {
         </div>
 
         <div className="owner-model-list">
+          {isLoading ? (
+            <div className="owner-empty-state">
+              <p>Loading models...</p>
+            </div>
+          ) : null}
+
+          {error ? (
+            <div className="owner-empty-state">
+              <p>{error}</p>
+            </div>
+          ) : null}
+
           {filteredModels.map((model) => (
             <article
               key={model.id}
@@ -197,7 +237,7 @@ function OwnerDashboard() {
             </article>
           ))}
 
-          {filteredModels.length === 0 ? (
+          {!isLoading && !error && filteredModels.length === 0 ? (
             <div className="owner-empty-state">
               <p>No models found. Create your first model to get started.</p>
             </div>
