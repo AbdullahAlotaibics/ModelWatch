@@ -626,7 +626,7 @@ Before submitting Phase 6, verify:
 
 ## Team
 
-- Team Member 1: ABDULLAH ALOTAIBI - Frontend development
-- Team Member 2: MOHAMMED ALFARAJ - Frontend development
-- Team Member 3: MOHAMMED ALNASR - Frontend development
-- Team Member 4: SAAD WAQAS - Frontend development
+- Team Member 1: ABDULLAH ALOTAIBI - Frontend development and Database designer
+- Team Member 2: MOHAMMED ALFARAJ - Frontend development and Backend development
+- Team Member 3: MOHAMMED ALNASR - Frontend development and Database designer
+- Team Member 4: SAAD WAQAS - Frontend development and Backend development
