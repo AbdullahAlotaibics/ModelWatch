@@ -40,8 +40,9 @@ exports.createIssue = async (req, res) => {
 
     res.status(201).json(issue);
   } catch (error) {
-    res.status(500).json({ message: "Unable to create issue", error: error.message });
-  }
+  console.error("createIssue error:", error);
+  res.status(500).json({ message: "Unable to create issue", error: error.message });
+}
 };
 
 exports.updateIssue = async (req, res) => {
