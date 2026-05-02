@@ -36,8 +36,8 @@ export function getModelById(id) {
 export function updateModel(updatedModel) {
   const currentModels = getModels();
 
-  const nextModels = currentModels.map((model) => 
-  model.id === updatedModel.id ? updatedModel : model
+  const nextModels = currentModels.map((model) =>
+    model.id === updatedModel.id ? updatedModel : model
   );
 
   saveModels(nextModels);

@@ -11,6 +11,7 @@ import {
 const emptyForm = {
   name: "",
   email: "",
+  password: "",
   role: "analyst",
 };
 
@@ -28,7 +29,7 @@ function formatRole(role) {
   return role;
 }
 
-function validateUserForm(formData) {
+function validateUserForm(formData, isEditing) {
   const nextErrors = {};
 
   if (!formData.name.trim()) {
@@ -41,6 +42,10 @@ function validateUserForm(formData) {
     nextErrors.email = "Enter a valid email address.";
   }
 
+  if (!isEditing && !formData.password.trim()) {
+    nextErrors.password = "Password is required.";
+  }
+
   return nextErrors;
 }
 
@@ -51,6 +56,7 @@ function AdminUsersPage() {
   const [editingUser, setEditingUser] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
   function closeModal() {
     setIsModalOpen(false);
@@ -99,6 +105,7 @@ function AdminUsersPage() {
     setFormData({
       name: user.name,
       email: user.email,
+      password: "",
       role: user.role,
     });
     setErrors({});
@@ -120,10 +127,10 @@ function AdminUsersPage() {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const validationErrors = validateUserForm(formData);
+    const validationErrors = validateUserForm(formData, Boolean(editingUser));
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -136,19 +143,31 @@ function AdminUsersPage() {
       role: formData.role,
     };
 
-    if (editingUser) {
-      updateUser({
-        ...editingUser,
-        ...normalizedUser,
-      });
-    } else {
-      createUser(normalizedUser);
+    if (formData.password.trim()) {
+      normalizedUser.password = formData.password.trim();
     }
 
-    closeModal();
+    try {
+      setIsSaving(true);
+
+      if (editingUser) {
+        await updateUser({
+          ...editingUser,
+          ...normalizedUser,
+        });
+      } else {
+        await createUser(normalizedUser);
+      }
+
+      closeModal();
+    } catch (requestError) {
+      setErrors({ form: requestError.message || "Unable to save user." });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDelete = (user) => {
+  const handleDelete = async (user) => {
     if (user.role === "admin") {
       return;
     }
@@ -156,7 +175,11 @@ function AdminUsersPage() {
     const shouldDelete = window.confirm("Are you sure you want to delete this user?");
 
     if (shouldDelete) {
-      deleteUser(user.id);
+      try {
+        await deleteUser(user.id);
+      } catch (requestError) {
+        alert(requestError.message || "Unable to delete user.");
+      }
     }
   };
 
@@ -292,6 +315,17 @@ function AdminUsersPage() {
               </label>
 
               <label className="modal-field">
+                <span>{editingUser ? "New Password" : "Password"}</span>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(event) => handleChange("password", event.target.value)}
+                  placeholder={editingUser ? "Leave blank to keep current password" : ""}
+                />
+                {errors.password ? <small>{errors.password}</small> : null}
+              </label>
+
+              <label className="modal-field">
                 <span>Role</span>
                 <select
                   value={formData.role}
@@ -309,10 +343,11 @@ function AdminUsersPage() {
                 <button type="button" className="secondary-btn" onClick={closeModal}>
                   Cancel
                 </button>
-                <button type="submit" className="primary-btn">
-                  {editingUser ? "Update" : "Create"}
+                <button type="submit" className="primary-btn" disabled={isSaving}>
+                  {isSaving ? "Saving..." : editingUser ? "Update" : "Create"}
                 </button>
               </div>
+              {errors.form ? <div className="inline-error">{errors.form}</div> : null}
             </form>
           </div>
         </div>

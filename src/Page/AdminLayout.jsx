@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { getAllIssues, updateIssue as updateStoredIssue} from "./issueStore";
 import { clearStoredAccount, getStoredAccount } from "../session";
+import { api } from "../api";
 import {
   AlertCircleIcon,
   ChartIcon,
@@ -11,62 +11,6 @@ import {
   UsersIcon,
 } from "./AdminIcons";
 import "./admin.css";
-
-const initialUsers = [
-  {
-    id: 1,
-    name: "Admin User",
-    email: "admin@modelwatch.com",
-    role: "admin",
-    createdAt: "2024-01-01",
-  },
-  {
-    id: 2,
-    name: "John Owner",
-    email: "owner@modelwatch.com",
-    role: "owner",
-    createdAt: "2024-01-05",
-  },
-  {
-    id: 3,
-    name: "Sarah Analyst",
-    email: "analyst@modelwatch.com",
-    role: "analyst",
-    createdAt: "2024-01-10",
-  },
-  {
-    id: 4,
-    name: "Mike Developer",
-    email: "mike@modelwatch.com",
-    role: "owner",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: 5,
-    name: "Lisa Scientist",
-    email: "lisa@modelwatch.com",
-    role: "analyst",
-    createdAt: "2024-01-20",
-  },
-];
-
-const initialCategories = [
-  {
-    id: "1",
-    name: "Natural Language Processing",
-    description: "Models focused on text understanding, generation, and language analysis.",
-  },
-  {
-    id: "2",
-    name: "Computer Vision",
-    description: "Image recognition, object detection, and visual classification models.",
-  },
-  {
-    id: "3",
-    name: "Forecasting",
-    description: "Predictive models used for demand, risk, and trend forecasting workflows.",
-  },
-];
 
 function formatRoleLabel(role) {
   if (role === "owner") {
@@ -84,9 +28,49 @@ function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentUser = getStoredAccount();
-  const [users, setUsers] = useState(initialUsers);
-  const [categories, setCategories] = useState(initialCategories);
-  const [issues, setIssues] = useState(getAllIssues());
+  const [users, setUsers] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [issues, setIssues] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadAdminData() {
+      try {
+        setIsLoading(true);
+        setError("");
+        const [nextUsers, nextCategories, nextIssues] = await Promise.all([
+          api.users.list(),
+          api.categories.list(),
+          api.issues.list(),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setUsers(nextUsers);
+        setCategories(nextCategories);
+        setIssues(nextIssues);
+      } catch (requestError) {
+        if (isMounted) {
+          setError(requestError.message || "Unable to load admin data.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadAdminData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const outletContext = useMemo(
     () => ({
@@ -94,64 +78,51 @@ function AdminLayout() {
       users,
       categories,
       issues,
-      createUser(user) {
-        setUsers((currentUsers) => [
-          {
-            ...user,
-            id: Date.now(),
-            createdAt: new Date().toISOString().slice(0, 10),
-          },
-          ...currentUsers,
-        ]);
+      async createUser(user) {
+        const createdUser = await api.users.create(user);
+        setUsers((currentUsers) => [createdUser, ...currentUsers]);
       },
-      updateUser(updatedUser) {
+      async updateUser(updatedUser) {
+        await api.users.update(updatedUser.id, updatedUser);
         setUsers((currentUsers) =>
           currentUsers.map((user) =>
             user.id === updatedUser.id ? { ...user, ...updatedUser } : user
           )
         );
       },
-      deleteUser(userId) {
+      async deleteUser(userId) {
+        await api.users.remove(userId);
         setUsers((currentUsers) => currentUsers.filter((user) => user.id !== userId));
       },
-      createCategory(category) {
-        setCategories((currentCategories) => [
-          ...currentCategories,
-          {
-            id: String(Date.now()),
-            ...category,
-          },
-        ]);
+      async createCategory(category) {
+        const createdCategory = await api.categories.create(category);
+        setCategories((currentCategories) => [...currentCategories, createdCategory]);
       },
-      updateCategory(updatedCategory) {
+      async updateCategory(updatedCategory) {
+        const savedCategory = await api.categories.update(updatedCategory.id, updatedCategory);
         setCategories((currentCategories) =>
           currentCategories.map((category) =>
-            category.id === updatedCategory.id ? { ...category, ...updatedCategory } : category
+            category.id === updatedCategory.id ? savedCategory : category
           )
         );
       },
-      deleteCategory(categoryId) {
+      async deleteCategory(categoryId) {
+        await api.categories.remove(categoryId);
         setCategories((currentCategories) =>
           currentCategories.filter((category) => category.id !== categoryId)
         );
       },
 
-      createIssue(issue) {
-        setIssues((currentIssues) => [
-          {
-            ...issue,
-            id: String(Date.now()),
-            createdAt: new Date().toISOString().slice(0, 10),
-            status: "open",
-            resolutionNote: "",
-          },
-          ...currentIssues,
-        ]);
+      async createIssue(issue) {
+        const createdIssue = await api.issues.create(issue);
+        setIssues((currentIssues) => [createdIssue, ...currentIssues]);
       },
 
-      updateIssue(issueId, updates) {
-        const updatedIssues = updateStoredIssue(issueId, updates);
-        setIssues(updatedIssues);
+      async updateIssue(issueId, updates) {
+        const updatedIssue = await api.issues.update(issueId, updates);
+        setIssues((currentIssues) =>
+          currentIssues.map((issue) => (issue.id === issueId ? updatedIssue : issue))
+        );
       },
     }),
     [categories, currentUser, issues, users]
@@ -214,7 +185,16 @@ function AdminLayout() {
       </nav>
 
       <main className="content">
-        <Outlet context={outletContext} />
+        {error ? <div className="inline-error">{error}</div> : null}
+        {isLoading ? (
+          <div className="admin-section">
+            <div className="admin-placeholder-card">
+              <h2>Loading admin data...</h2>
+            </div>
+          </div>
+        ) : (
+          <Outlet context={outletContext} />
+        )}
       </main>
     </div>
   );

@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getStoredAccount } from "../session";
-import { createIssue } from "./issueStore";
+import { api } from "../api";
 import { getModelById, updateModel } from "./modelStore";
 import {
   ArrowLeftIcon,
@@ -170,7 +170,7 @@ const closeFlagModal = () => {
   setFlagError("");
 };
 
-const handleFlagSubmit = (event) => {
+const handleFlagSubmit = async (event) => {
   event.preventDefault();
 
   if (!flagReason.trim()) {
@@ -203,11 +203,18 @@ const handleFlagSubmit = (event) => {
       updates: [...(currentModel.updates || []), `Model flagged: ${flagReason.trim()}`],
     };
 
-    createIssue(newIssue);
-    updateModel(updatedModel);
-    setFlagSuccess("Model flagged successfully.");
-    setCurrentModel(updatedModel);
-    closeFlagModal();
+    try {
+      await api.issues.create({
+        ...newIssue,
+        modelId: currentModel.id,
+      });
+      updateModel(updatedModel);
+      setFlagSuccess("Model flagged successfully.");
+      setCurrentModel(updatedModel);
+      closeFlagModal();
+    } catch (requestError) {
+      setFlagError(requestError.message || "Unable to submit flag.");
+    }
   };
 
   if (!pageData) {

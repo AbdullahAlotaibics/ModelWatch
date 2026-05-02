@@ -27,6 +27,7 @@ function AdminCategoriesPage() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [formData, setFormData] = useState(emptyForm);
   const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
   function closeModal() {
     setIsModalOpen(false);
@@ -67,9 +68,13 @@ function AdminCategoriesPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteCategory = (categoryId) => {
+  const handleDeleteCategory = async (categoryId) => {
     if (window.confirm("Are you sure you want to delete this category?")) {
-      deleteCategory(categoryId);
+      try {
+        await deleteCategory(categoryId);
+      } catch (requestError) {
+        alert(requestError.message || "Unable to delete category.");
+      }
     }
   };
 
@@ -88,7 +93,7 @@ function AdminCategoriesPage() {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const validationErrors = validateCategoryForm(formData);
@@ -103,16 +108,24 @@ function AdminCategoriesPage() {
       description: formData.description.trim(),
     };
 
-    if (editingCategory) {
-      updateCategory({
-        ...editingCategory,
-        ...normalizedCategory,
-      });
-    } else {
-      createCategory(normalizedCategory);
-    }
+    try {
+      setIsSaving(true);
 
-    closeModal();
+      if (editingCategory) {
+        await updateCategory({
+          ...editingCategory,
+          ...normalizedCategory,
+        });
+      } else {
+        await createCategory(normalizedCategory);
+      }
+
+      closeModal();
+    } catch (requestError) {
+      setErrors({ form: requestError.message || "Unable to save category." });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -224,10 +237,11 @@ function AdminCategoriesPage() {
                 <button type="button" className="secondary-btn" onClick={closeModal}>
                   Cancel
                 </button>
-                <button type="submit" className="primary-btn">
-                  {editingCategory ? "Update" : "Create"}
+                <button type="submit" className="primary-btn" disabled={isSaving}>
+                  {isSaving ? "Saving..." : editingCategory ? "Update" : "Create"}
                 </button>
               </div>
+              {errors.form ? <div className="inline-error">{errors.form}</div> : null}
             </form>
           </div>
         </div>

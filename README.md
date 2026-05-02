@@ -86,6 +86,60 @@ npm run build
 npm run lint
 ```
 
+## Back-End Server
+
+The back-end server is located in the `server/` folder and provides the REST API for user, category, and issue management.
+
+### Server setup
+
+1. Change into the backend folder:
+   ```bash
+   cd server
+   ```
+2. Install server dependencies:
+   ```bash
+   npm install
+   ```
+3. Copy the sample environment file:
+   ```bash
+   copy .env.sample .env
+   ```
+4. Update `.env` with your MongoDB connection string and JWT secret.
+5. Start the backend server:
+   ```bash
+   npm run dev
+   ```
+
+### API endpoints
+
+Base URL: `http://localhost:5000/api`
+
+#### Auth
+- `POST /auth/register` — create a new user
+- `POST /auth/login` — authenticate with email and password
+
+#### Users
+- `GET /users` — list all users (admin only)
+- `POST /users` — create a new user (admin only)
+- `GET /users/:id` — get user details (admin only)
+- `PUT /users/:id` — update a user (admin only)
+- `DELETE /users/:id` — remove a user (admin only)
+
+#### Categories
+- `GET /categories` — list categories
+- `POST /categories` — create a category (admin only)
+- `PUT /categories/:id` — update a category (admin only)
+- `DELETE /categories/:id` — delete a category (admin only)
+
+#### Issues
+- `GET /issues` — list all issues (admin only)
+- `POST /issues` — create a new issue (authenticated users)
+- `GET /issues/:id` — get issue details
+- `PUT /issues/:id` — update an issue (admin only)
+- `DELETE /issues/:id` — delete an issue (admin only)
+
+> Note: All authenticated routes require a `Bearer <token>` header returned from `POST /auth/login`.
+
 ## Usage
 
 After starting the app, open the local Vite URL in your browser and sign in with one of the demo accounts shown on the login screen.

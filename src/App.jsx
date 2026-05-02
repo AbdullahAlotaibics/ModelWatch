@@ -21,10 +21,10 @@ import OwnerCompare from "./Page/OwnerCompare";
 import ModelDetailsPage from "./Page/ModelDetailsPage";
 import {
   clearStoredAccount,
-  demoAccounts,
   getStoredAccount,
   storeAccount,
 } from "./session";
+import { api, normalizeUser } from "./api";
 import "./index.css";
 
 function LoginPage() {
@@ -32,6 +32,8 @@ function LoginPage() {
   const storedAccount = getStoredAccount();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!storedAccount) {
@@ -41,22 +43,29 @@ function LoginPage() {
     navigate(storedAccount.role === "admin" ? "/dashboard" : "/owner", { replace: true });
   }, [navigate, storedAccount]);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setError("");
+    setIsSubmitting(true);
 
-    const matchedAccount = demoAccounts.find(
-      (account) =>
-        account.email === email.trim().toLowerCase() &&
-        account.password === password.trim()
-    );
+    try {
+      const session = await api.login({
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
+      });
+      const account = {
+        ...normalizeUser(session.user),
+        token: session.token,
+        label: session.user.name,
+      };
 
-    if (!matchedAccount) {
-      alert("Invalid login");
-      return;
+      storeAccount(account);
+      navigate(account.role === "admin" ? "/dashboard" : "/owner", { replace: true });
+    } catch (requestError) {
+      setError(requestError.message || "Invalid login");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    storeAccount(matchedAccount);
-    navigate(matchedAccount.role === "admin" ? "/dashboard" : "/owner", { replace: true });
   };
 
   return (
@@ -97,21 +106,26 @@ function LoginPage() {
           </div>
 
           <button className="login-btn" type="submit">
-            Sign In
+            {isSubmitting ? "Signing In..." : "Sign In"}
           </button>
+          {error ? <div className="inline-error">{error}</div> : null}
         </form>
 
         <div className="demo-box">
           <h3>Demo Accounts</h3>
           <div className="demo-list">
-            {demoAccounts.map((account) => (
-              <div key={account.email} className="demo-item">
-                <strong className="demo-label">{account.label}:</strong>
-                <span className="demo-value">
-                  {account.email} / {account.password}
-                </span>
-              </div>
-            ))}
+            <div className="demo-item">
+              <strong className="demo-label">Admin User:</strong>
+              <span className="demo-value">admin@modelwatch.com / admin123</span>
+            </div>
+            <div className="demo-item">
+              <strong className="demo-label">John Owner:</strong>
+              <span className="demo-value">owner@modelwatch.com / owner123</span>
+            </div>
+            <div className="demo-item">
+              <strong className="demo-label">Sarah Analyst:</strong>
+              <span className="demo-value">analyst@modelwatch.com / analyst123</span>
+            </div>
           </div>
         </div>
       </div>

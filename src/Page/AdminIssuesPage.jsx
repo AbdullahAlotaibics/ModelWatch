@@ -7,7 +7,7 @@ function getStatusIcon(status) {
     return <CheckCircleIcon className="issue-status-icon resolved" />;
   }
 
-  if (status === "in-review") {
+  if (status === "in-progress") {
     return <ClockIcon className="issue-status-icon in-review" />;
   }
 
@@ -34,24 +34,32 @@ function AdminIssuesPage() {
     setResolutionNote(nextIssue?.resolutionNote || "");
   };
 
-  const handleStatusChange = (issueId, newStatus) => {
+  const handleStatusChange = async (issueId, newStatus) => {
     const nextUpdates =
       newStatus === "resolved"
         ? { status: newStatus, resolutionNote: resolutionNote.trim() }
         : { status: newStatus };
 
-    updateIssue(issueId, nextUpdates);
+    try {
+      await updateIssue(issueId, nextUpdates);
+    } catch (requestError) {
+      alert(requestError.message || "Unable to update issue.");
+    }
   };
 
-  const handleResolve = () => {
+  const handleResolve = async () => {
     if (!selectedIssue || !resolutionNote.trim()) {
       return;
     }
 
-    updateIssue(selectedIssue.id, {
-      status: "resolved",
-      resolutionNote: resolutionNote.trim(),
-    });
+    try {
+      await updateIssue(selectedIssue.id, {
+        status: "resolved",
+        resolutionNote: resolutionNote.trim(),
+      });
+    } catch (requestError) {
+      alert(requestError.message || "Unable to resolve issue.");
+    }
   };
 
   return (
@@ -139,7 +147,7 @@ function AdminIssuesPage() {
                   onChange={(event) => handleStatusChange(selectedIssue.id, event.target.value)}
                 >
                   <option value="open">Open</option>
-                  <option value="in-review">In Review</option>
+                  <option value="in-progress">In Progress</option>
                   <option value="resolved">Resolved</option>
                 </select>
               </div>
