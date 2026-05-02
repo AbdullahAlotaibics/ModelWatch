@@ -19,6 +19,7 @@ import OwnerLayout from "./Page/OwnerLayout";
 import OwnerBrowse from "./Page/OwnerBrowse";
 import OwnerCompare from "./Page/OwnerCompare";
 import ModelDetailsPage from "./Page/ModelDetailsPage";
+import AdminModelsPage from "./Page/AdminModelsPage";
 import {
   clearStoredAccount,
   getStoredAccount,
@@ -158,6 +159,7 @@ function App() {
             <Route path="/admin/users" element={<AdminUsersPage />} />
             <Route path="/admin/categories" element={<AdminCategoriesPage />} />
             <Route path="/admin/issues" element={<AdminIssuesPage />} />
+            <Route path="/admin/models" element={<AdminModelsPage />} />
           </Route>
         </Route>
 

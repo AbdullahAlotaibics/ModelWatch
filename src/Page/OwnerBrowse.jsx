@@ -21,8 +21,15 @@ function OwnerBrowse() {
       setError("");
 
       try {
-        const filters =
-          currentUser?.role === "owner" ? { ownerEmail: currentUser.email } : {};
+        const filters = {
+          search: searchTerm.trim(),
+          category: selectedCategory,
+          visibility: selectedVisibility,
+          ...(currentUser?.role === "owner"
+            ? { ownerEmail: currentUser.email }
+            : {}),
+        };
+
         const models = await api.models.list(filters);
 
         if (isMounted) {
@@ -44,30 +51,19 @@ function OwnerBrowse() {
     return () => {
       isMounted = false;
     };
-  }, [currentUser?.email, currentUser?.role]);
+  }, [
+      currentUser?.email,
+      currentUser?.role,
+      searchTerm,
+      selectedCategory,
+      selectedVisibility,
+    ]);
 
   const categories = useMemo(() => {
     return [...new Set(accessibleModels.map((model) => model.category))];
   }, [accessibleModels]);
 
-  const filteredModels = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-
-    return accessibleModels.filter((model) => {
-      const matchesSearch =
-        !normalizedSearch ||
-        model.name.toLowerCase().includes(normalizedSearch) ||
-        model.description.toLowerCase().includes(normalizedSearch);
-
-      const matchesCategory =
-        selectedCategory === "all" || model.category === selectedCategory;
-
-      const matchesVisibility =
-        selectedVisibility === "all" || model.visibility === selectedVisibility;
-
-      return matchesSearch && matchesCategory && matchesVisibility;
-    });
-  }, [accessibleModels, searchTerm, selectedCategory, selectedVisibility]);
+  const filteredModels = accessibleModels;
 
   const handleViewModel = (modelId) => {
     navigate(`/owner/models/${modelId}`);

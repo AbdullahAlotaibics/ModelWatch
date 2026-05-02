@@ -39,6 +39,7 @@ function ModelDetailsPage() {
   const [noteSuccess, setNoteSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -169,6 +170,26 @@ const handleFlagSubmit = async (event) => {
       setFlagError(requestError.message || "Unable to submit flag.");
     }
   };
+  
+  const handleDeleteModel = async () => {
+  if (!currentModel) return;
+
+  const confirmed = window.confirm(
+    `Are you sure you want to delete "${currentModel.name}"?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setIsDeleting(true);
+    await api.models.remove(currentModel.id);
+    navigate("/owner", { replace: true });
+  } catch (requestError) {
+    alert(requestError.message || "Unable to delete model.");
+  } finally {
+    setIsDeleting(false);
+  }
+};
 
   if (isLoading) {
     return (
@@ -233,15 +254,27 @@ const handleFlagSubmit = async (event) => {
 
           <div className="model-hero-actions">
             {isOwner ? (
+              <>
               <button
-                type="button"
-                className="primary-button details-main-action"
-                onClick={() => navigate(`/owner/models/${modelId}/edit`)}
+              type="button"
+              className="primary-button details-main-action"
+              onClick={() => navigate(`/owner/models/${modelId}/edit`)}
               >
                 <EditIcon className="owner-inline-icon" />
-                <span>Edit Model</span>
-              </button>
-            ) : null}
+                 <span>Edit Model</span>
+                 </button>
+                 
+                 <button
+                 type="button"
+                 className="danger-action-button"
+                 onClick={handleDeleteModel}
+                 disabled={isDeleting}
+                 >
+                  {isDeleting ? "Deleting..." : "Delete Model"}
+                  </button>
+                  </>
+                  ) : null}
+            
 
             {isAnalyst ? (
               <>

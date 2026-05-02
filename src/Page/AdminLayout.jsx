@@ -133,6 +133,7 @@ function AdminLayout() {
     { to: "/admin/users", label: "Users", icon: UsersIcon },
     { to: "/admin/categories", label: "Categories", icon: FolderTreeIcon },
     { to: "/admin/issues", label: "Issues", icon: AlertCircleIcon },
+    { to: "/admin/models", label: "Models", icon: FolderTreeIcon },
   ];
 
   const handleLogout = () => {

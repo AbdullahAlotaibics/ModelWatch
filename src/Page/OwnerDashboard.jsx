@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { getStoredAccount } from "../session";
@@ -53,7 +53,11 @@ function OwnerDashboard() {
       setError("");
 
       try {
-        const models = await api.models.list({ ownerEmail: currentUser?.email });
+            const models = await api.models.list({
+        ownerEmail: currentUser?.email,
+        search: searchTerm.trim(),
+        visibility: filterVisibility,
+      });
 
         if (isMounted) {
           setMyModels(models);
@@ -74,23 +78,9 @@ function OwnerDashboard() {
     return () => {
       isMounted = false;
     };
-  }, [currentUser?.email]);
+  }, [currentUser?.email, searchTerm, filterVisibility]);
 
-  const filteredModels = useMemo(
-    () =>
-      myModels.filter((model) => {
-        const normalizedSearch = searchTerm.trim().toLowerCase();
-        const matchesSearch =
-          !normalizedSearch ||
-          model.name.toLowerCase().includes(normalizedSearch) ||
-          model.description.toLowerCase().includes(normalizedSearch);
-        const matchesVisibility =
-          filterVisibility === "all" || model.visibility === filterVisibility;
-
-        return matchesSearch && matchesVisibility;
-      }),
-    [filterVisibility, myModels, searchTerm]
-  );
+  const filteredModels = myModels;
 
   const totalUpdates = myModels.reduce((count, model) => count + model.updates.length, 0);
 

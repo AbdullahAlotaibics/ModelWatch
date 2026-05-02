@@ -54,9 +54,8 @@ const modelSchema = new mongoose.Schema({
 
 modelSchema.index({ name: "text", description: "text", category: "text" });
 
-modelSchema.pre("save", function (next) {
+modelSchema.pre("save", function () {
   this.updatedAt = Date.now();
-  next();
 });
 
 module.exports = mongoose.model("Model", modelSchema);
